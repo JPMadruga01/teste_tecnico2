@@ -3,6 +3,7 @@ import { supabase } from "@/src/lib/supabase";
 import { inputSchema } from "@/src/lib/validate";
 import { systemPrompt, outputSchema } from "@/src/lib/prompt";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { validateGenerated } from "@/src/lib/generatedSchema";
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,10 +38,19 @@ Idioma: ${parsed.language}
 
     const text = response.text();
     let generated: any;
-    try { generated = JSON.parse(text); } catch {
+    try {
+      generated = JSON.parse(text);
+    } catch (e) {
       const match = text.match(/\{[\s\S]*\}/);
       if (!match) throw new Error("Falha ao parsear JSON da IA.");
       generated = JSON.parse(match[0]);
+    }
+
+    // Validar o JSON gerado contra o schema
+    try {
+      validateGenerated(generated);
+    } catch (err: any) {
+      throw new Error(`Resposta da IA inválida: ${err?.message ?? String(err)}`);
     }
 
     const bnccArray = parsed.bncc_codes
@@ -63,7 +73,17 @@ Idioma: ${parsed.language}
         language: parsed.language,
         generated,
         model_name: process.env.GEMINI_MODEL || "gemini-1.5-pro",
-        raw_model_response: response.candidates?.[0] ?? null
+        raw_model_response: (() => {
+          try {
+            const raw = response.candidates?.[0] ?? null;
+            if (!raw) return null;
+            const str = typeof raw === 'string' ? raw : JSON.stringify(raw);
+            // truncar para 20kb
+            return str.length > 20000 ? str.slice(0, 20000) : str;
+          } catch {
+            return null;
+          }
+        })()
       }])
       .select()
       .single();
