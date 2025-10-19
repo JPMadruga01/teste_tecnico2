@@ -1,6 +1,6 @@
 
   {
-      "name": "Lesson Plan Generator",
+      "name": "lesson-plan-generator-vite",
       "version": "0.1.0",
       "private": true,
       "dependencies": {
