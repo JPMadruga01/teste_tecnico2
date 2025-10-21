@@ -1,0 +1,7 @@
+{
+  "timestamp": "2025-10-21T14:43:32.290Z",
+  "useMock": false,
+  "fallbackToMock": false,
+  "hasGoogleKey": true,
+  "geminiModel": "models/gemini-2.5-pro"
+}

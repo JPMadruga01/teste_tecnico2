@@ -1,0 +1,33 @@
+{
+  "timestamp": "2025-10-21T14:43:32.292Z",
+  "text": "{\"introducao_ludica\":\"Intro\",\"objetivo_bncc\":{\"descricao\":\"desc\",\"codigos_relacionados\":[\"EF01\"]},\"passo_a_passo\":[{\"etapa\":1,\"descricao\":\"do\"}],\"rubrica_avaliacao\":[{\"criterio\":\"c\",\"iniciante\":\"a\",\"intermediario\":\"b\",\"avancado\":\"c\"}]}",
+  "raw": {
+    "response": {
+      "candidates": [
+        {
+          "introducao_ludica": "Intro",
+          "objetivo_bncc": {
+            "descricao": "desc",
+            "codigos_relacionados": [
+              "EF01"
+            ]
+          },
+          "passo_a_passo": [
+            {
+              "etapa": 1,
+              "descricao": "do"
+            }
+          ],
+          "rubrica_avaliacao": [
+            {
+              "criterio": "c",
+              "iniciante": "a",
+              "intermediario": "b",
+              "avancado": "c"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
