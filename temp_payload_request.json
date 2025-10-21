@@ -1,12 +1,10 @@
 {
-  "timestamp": "2025-10-21T03:21:11.412Z",
+  "timestamp": "2025-10-21T14:43:32.291Z",
   "request": {
-    "subject": "Matemática",
+    "subject": "Mat",
     "topic": "Frações",
     "school_year": "5º ano",
-    "duration_minutes": 50,
-    "resources": "Quadro, material concreto",
-    "constraints": "Sem acesso a internet",
+    "duration_minutes": 45,
     "language": "pt-BR"
   }
 }
