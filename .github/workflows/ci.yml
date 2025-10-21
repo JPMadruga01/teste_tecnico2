@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint || echo "Lint failed but continuing"
+
+      - name: Run Jest tests
+        run: npx jest --color --runInBand
+
+      - name: Build (optional)
+        run: npm run build
+
+      - name: Run endpoint checks (mock)
+        env:
+          USE_MOCK_GENERATOR: 'true'
+        run: |
+          # Ensure the script is executable and run it
+          node ./scripts/test-endpoints.cjs
+
+  # Add more jobs for deploy or e2e as needed

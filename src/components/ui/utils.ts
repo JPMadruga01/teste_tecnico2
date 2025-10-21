@@ -1,6 +1,4 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+// Minimal `cn` helper used by UI components. Avoids extra dependencies for dev.
+export function cn(...parts: Array<string | false | null | undefined>) {
+  return parts.filter(Boolean).join(' ');
 }

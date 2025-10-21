@@ -1,51 +1,68 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import supabaseClient, { signInWithEmail, signOut, getSession } from "@/src/lib/supabaseClient";
+import { LessonPlanForm } from "@/src/components/LessonPlanForm";
 
 export default function Page() {
   const [loading, setLoading] = useState(false);
   const [plan, setPlan] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [session, setSession] = useState<any>(null);
+  const [email, setEmail] = useState("");
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError(null); setPlan(null); setLoading(true);
+  useEffect(() => {
+    // hydrate session on client
+    (async () => {
+      const s = await getSession();
+      setSession(s);
+    })();
 
-    const form = new FormData(e.currentTarget);
-    const payload: any = Object.fromEntries(form.entries());
-
-    const res = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+    const { data: listener } = supabaseClient.auth.onAuthStateChange((event, s) => {
+      // `s` is the session object (or null) in the v2 client callback
+      setSession((s as any) ?? null);
     });
 
-    const json = await res.json();
-    setLoading(false);
+    return () => listener?.subscription?.unsubscribe?.();
+  }, []);
 
-    if (!json.ok) { setError(json.error); return; }
-    setPlan(json.plan);
-  }
+  const handleEmailSignIn = async () => {
+    if (!email) return alert('Digite seu email para entrar.');
+    await signInWithEmail(email);
+    alert('Verifique seu email para o link mágico de login.');
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    setSession(null);
+  };
 
   return (
-    <main className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Gerador de Plano de Aula (BNCC)</h1>
+  <main className="mx-auto max-w-[1100px]">
+      <header className="page-header">
+        <div className="brand-badge">📘</div>
+        <h1 className="text-xl font-semibold">Gerador de Planos de Aula</h1>
+        <p className="page-subtitle">Crie planos de aula personalizados e alinhados com a BNCC usando inteligência artificial</p>
+      </header>
 
-      <form onSubmit={onSubmit} className="grid gap-3">
-        <input name="subject" placeholder="Disciplina (ex: Matemática)" className="border p-2" required />
-        <input name="topic" placeholder="Tema (ex: Frações)" className="border p-2" required />
-        <input name="school_year" placeholder="Ano/Série (ex: 5º ano)" className="border p-2" required />
-        <input name="duration_minutes" type="number" placeholder="Duração em minutos" className="border p-2" required />
-        <input name="class_size" type="number" placeholder="Tamanho da turma (opcional)" className="border p-2" />
-        <input name="bncc_codes" placeholder="Códigos BNCC (opcional: separados por vírgula)" className="border p-2" />
-        <textarea name="teacher_goals" placeholder="Objetivos do professor (opcional)" className="border p-2" />
-        <input name="resources" placeholder="Recursos disponíveis (opcional)" className="border p-2" />
-        <input name="constraints" placeholder="Restrições/observações (opcional)" className="border p-2" />
-        <input name="language" defaultValue="pt-BR" className="border p-2" />
+      <div className="form-card-container">
+        <div className="form-card">
+          <div className="flex justify-end mb-4">
+            {session ? (
+              <div className="flex items-center gap-2">
+                <span className="text-sm">{session.user?.email}</span>
+                <button onClick={handleSignOut} className="bg-gray-200 px-3 py-1 rounded">Sair</button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@dominio.com" className="border p-1 rounded text-sm" />
+                <button onClick={handleEmailSignIn} className="bg-blue-500 text-white px-3 py-1 rounded text-sm">Entrar</button>
+              </div>
+            )}
+          </div>
 
-        <button disabled={loading} className="bg-black text-white px-4 py-2 rounded">
-          {loading ? "Gerando..." : "Gerar plano"}
-        </button>
-      </form>
+          <LessonPlanForm onPlanGenerated={setPlan} loading={loading} setLoading={setLoading} token={session?.access_token} />
+        </div>
+      </div>
 
       {error && <p className="text-red-600 mt-4">{error}</p>}
 

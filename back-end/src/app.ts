@@ -1,12 +1,12 @@
 import express from 'express';
-import routes from './routes';
+import routes from './routes/index';
 
 const app = express();
 
 app.use(express.json());
 app.use('/api', routes);
 
-app.get('/', (req, res) => {
+app.get('/', (req: express.Request, res: express.Response) => {
   res.json({ ok: true, message: 'API is running' });
 });
 

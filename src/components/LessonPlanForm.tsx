@@ -1,4 +1,6 @@
-import { useState } from 'react';
+"use client";
+import { useState, useRef, useEffect } from 'react';
+import { cn } from './ui/utils';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -12,9 +14,11 @@ interface LessonPlanFormProps {
   onPlanGenerated: (plan: LessonPlan) => void;
   loading: boolean;
   setLoading: (loading: boolean) => void;
+  token?: string | null;
+  className?: string;
 }
 
-export function LessonPlanForm({ onPlanGenerated, loading, setLoading }: LessonPlanFormProps) {
+export function LessonPlanForm({ onPlanGenerated, loading, setLoading, token, className }: LessonPlanFormProps) {
   const [formData, setFormData] = useState({
     subject: '',
     topic: '',
@@ -30,31 +34,73 @@ export function LessonPlanForm({ onPlanGenerated, loading, setLoading }: LessonP
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
 
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-8f84519f/generate`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${publicAnonKey}`,
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error generating lesson plan:', errorText);
-        throw new Error('Failed to generate lesson plan');
+      // Prefer a logged-in user's access token when available; fall back to public anon key
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      } else {
+        headers['Authorization'] = `Bearer ${publicAnonKey}`;
       }
 
-      const plan = await response.json();
+      // Build payload that matches server input schema
+      const durationMatch = String(formData.duration).match(/(\d+)/);
+      const durationMinutes = durationMatch ? Number(durationMatch[1]) : undefined;
+
+      const payload = {
+        subject: formData.subject,
+        topic: formData.topic,
+        grade: formData.grade,
+        school_year: formData.grade || undefined,
+        duration: formData.duration,
+        duration_minutes: durationMinutes,
+        class_size: formData.classSize,
+        bncc_codes: formData.bnccCodes,
+        teacher_goals: formData.objectives,
+        resources: formData.resources,
+        constraints: formData.constraints,
+        language: 'pt-BR'
+      };
+
+      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-8f84519f/generate`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      const text = await response.text();
+      if (!response.ok) {
+        // Try to parse JSON error from server
+        try {
+          const errJson = JSON.parse(text);
+          console.error('Error generating lesson plan:', errJson);
+          setErrorMessage(errJson.error || errJson.message || JSON.stringify(errJson));
+        } catch {
+          console.error('Error generating lesson plan:', text);
+          setErrorMessage(text || 'Erro ao gerar o plano de aula');
+        }
+        return;
+      }
+
+      let plan: any;
+      try {
+        plan = JSON.parse(text);
+      } catch {
+        plan = text;
+      }
+
+      // Keep form state but notify parent with the generated plan
       onPlanGenerated(plan);
+      setSuccessMessage('Plano de aula gerado com sucesso.');
     } catch (error) {
       console.error('Error submitting form:', error);
-      alert('Erro ao gerar o plano de aula. Por favor, tente novamente.');
+      setErrorMessage((error as any)?.message ?? 'Erro ao gerar o plano de aula. Por favor, tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -69,9 +115,37 @@ export function LessonPlanForm({ onPlanGenerated, loading, setLoading }: LessonP
     }));
   };
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const errorRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (errorMessage && errorRef.current) {
+      errorRef.current.focus();
+    }
+  }, [errorMessage]);
+
   return (
-    <Card className="p-8 shadow-xl border-0 bg-white/80 backdrop-blur">
-      <form onSubmit={handleSubmit} className="space-y-6">
+    <Card className={cn('p-8 shadow-xl border-0 bg-white/80 backdrop-blur', className)}>
+      <form onSubmit={handleSubmit} className="space-y-6" aria-busy={loading}>
+        {/* Inline messages */}
+        {errorMessage && (
+          <div
+            tabIndex={-1}
+            ref={errorRef}
+            role="alert"
+            aria-live="assertive"
+            className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-800"
+          >
+            {errorMessage}
+          </div>
+        )}
+
+        {successMessage && (
+          <div role="status" aria-live="polite" className="rounded-md bg-green-50 border border-green-200 p-3 text-sm text-green-800">
+            {successMessage}
+          </div>
+        )}
         <div className="grid md:grid-cols-2 gap-6">
           {/* Disciplina */}
           <div className="space-y-2">
@@ -204,7 +278,7 @@ export function LessonPlanForm({ onPlanGenerated, loading, setLoading }: LessonP
         {/* Submit Button */}
         <Button 
           type="submit" 
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+          className="btn-primary"
           disabled={loading}
         >
           {loading ? (

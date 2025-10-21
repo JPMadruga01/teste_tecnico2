@@ -1,0 +1,8 @@
+/* Archived copy of front-end/src/styles/globals.css */
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+}
+
+/* truncated archive copy for reference */
