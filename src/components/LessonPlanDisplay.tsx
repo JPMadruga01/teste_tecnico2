@@ -1,7 +1,7 @@
-import { Button } from './ui/button';
-import { Card } from './ui/card';
-import { Badge } from './ui/badge';
-import { Separator } from './ui/separator';
+import { Button } from '../../front-end/src/components/ui/button';
+import { Card } from '../../front-end/src/components/ui/card';
+import { Badge } from '../../front-end/src/components/ui/badge';
+import { Separator } from '../../front-end/src/components/ui/separator';
 import { 
   ArrowLeft, 
   Target, 
