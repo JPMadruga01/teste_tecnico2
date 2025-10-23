@@ -38,5 +38,5 @@ curl -X POST http://localhost:3000/api/generate  -H 'Content-Type: application/j
 - Defina as mesmas variáveis de ambiente no painel.
 - Apontar para a mesma base Supabase.
 =======
-# tes
+
 >>>>>>> a4eeeef1357cda9f81ad23806e14a5983f4aef1e
